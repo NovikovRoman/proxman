@@ -2,7 +2,7 @@
 
 > A simple proxy list manager
 
-[![Build Status](https://travis-ci.org/ProxMan/ProxMan.svg?branch=master)](https://travis-ci.org/ProxMan/ProxMan)
+[![Go Report Card](https://goreportcard.com/badge/github.com/NovikovRoman/proxman)](https://goreportcard.com/report/github.com/NovikovRoman/proxman)
 
 ## Usage example
 
