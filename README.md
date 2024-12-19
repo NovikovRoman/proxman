@@ -79,7 +79,7 @@ func main() {
     wg.Wait()
 
     // To demonstrate the defer release.
-    for pm.NumFree() < pm.Num() {
+    for pm.NumFree() + pm.NumBanned() < pm.Num() {
        log.Printf("busy %+v\n", pm.BusyList())
        time.Sleep(time.Second / 4)
     }
