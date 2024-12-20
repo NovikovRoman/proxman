@@ -3,6 +3,7 @@
 > A simple proxy list manager
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/NovikovRoman/proxman)](https://goreportcard.com/report/github.com/NovikovRoman/proxman)
+[![Go](https://github.com/NovikovRoman/proxman/actions/workflows/go.yml/badge.svg)](https://github.com/NovikovRoman/proxman/actions/workflows/go.yml)
 
 ## Usage example
 
