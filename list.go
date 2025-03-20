@@ -8,7 +8,7 @@ import (
 )
 
 type List struct {
-	sync.RWMutex
+	mu      sync.RWMutex
 	items   map[string]*Proxy
 	maxBusy int
 }
@@ -31,8 +31,8 @@ func (p *List) MaxBusy() int {
 }
 
 func (p *List) Len() int {
-	p.RLock()
-	defer p.RUnlock()
+	p.mu.RLock()
+	defer p.mu.RUnlock()
 	return len(p.items)
 }
 
@@ -45,8 +45,8 @@ func (p *List) IsEmpty() bool {
 }
 
 func (p *List) Add(u ...*url.URL) {
-	p.Lock()
-	defer p.Unlock()
+	p.mu.Lock()
+	defer p.mu.Unlock()
 
 	for _, uu := range u {
 		if _, ok := p.items[uu.String()]; !ok {
@@ -58,15 +58,15 @@ func (p *List) Add(u ...*url.URL) {
 }
 
 func (p *List) Contains(u *url.URL) (ok bool) {
-	p.RLock()
-	defer p.RUnlock()
+	p.mu.RLock()
+	defer p.mu.RUnlock()
 	_, ok = p.items[u.String()]
 	return
 }
 
 func (p *List) Remove(u ...*url.URL) {
-	p.Lock()
-	defer p.Unlock()
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	for _, uu := range u {
 		delete(p.items, uu.String())
 	}
@@ -81,8 +81,8 @@ func (p *List) Acquire() (u *url.URL) {
 	}
 
 	// A Lock is used instead of an RLock to ensure that no proxy data is being added at the moment.
-	p.Lock()
-	defer p.Unlock()
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	shuffleProxy := []*Proxy{}
 	for _, item := range p.items {
 		if item.isFree() {
@@ -109,8 +109,8 @@ func (p *List) Acquire() (u *url.URL) {
 func (p *List) List() (proxies []*url.URL) {
 	p.resetDeferRelease()
 
-	p.RLock()
-	defer p.RUnlock()
+	p.mu.RLock()
+	defer p.mu.RUnlock()
 	for _, item := range p.items {
 		proxies = append(proxies, item.url)
 	}
@@ -120,8 +120,8 @@ func (p *List) List() (proxies []*url.URL) {
 func (p *List) FreeList() (proxies []*url.URL) {
 	p.resetDeferRelease()
 
-	p.RLock()
-	defer p.RUnlock()
+	p.mu.RLock()
+	defer p.mu.RUnlock()
 	for _, item := range p.items {
 		if item.isFree() {
 			proxies = append(proxies, item.url)
@@ -133,8 +133,8 @@ func (p *List) FreeList() (proxies []*url.URL) {
 func (p *List) BusyList() (proxies []*url.URL) {
 	p.resetDeferRelease()
 
-	p.RLock()
-	defer p.RUnlock()
+	p.mu.RLock()
+	defer p.mu.RUnlock()
 	for _, item := range p.items {
 		if item.isBusy() {
 			proxies = append(proxies, item.url)
@@ -144,8 +144,8 @@ func (p *List) BusyList() (proxies []*url.URL) {
 }
 
 func (p *List) BannedList() (banned []*url.URL) {
-	p.RLock()
-	defer p.RUnlock()
+	p.mu.RLock()
+	defer p.mu.RUnlock()
 	for _, item := range p.items {
 		if item.isBanned() {
 			banned = append(banned, item.url)
@@ -157,8 +157,8 @@ func (p *List) BannedList() (banned []*url.URL) {
 func (p *List) NumFree() (num int) {
 	p.resetDeferRelease()
 
-	p.RLock()
-	defer p.RUnlock()
+	p.mu.RLock()
+	defer p.mu.RUnlock()
 	for _, item := range p.items {
 		if item.isFree() {
 			num++
@@ -170,8 +170,8 @@ func (p *List) NumFree() (num int) {
 func (p *List) NumBusy() (num int) {
 	p.resetDeferRelease()
 
-	p.RLock()
-	defer p.RUnlock()
+	p.mu.RLock()
+	defer p.mu.RUnlock()
 	for _, item := range p.items {
 		if item.isBusy() {
 			num++
@@ -181,8 +181,8 @@ func (p *List) NumBusy() (num int) {
 }
 
 func (p *List) NumBanned() (num int) {
-	p.RLock()
-	defer p.RUnlock()
+	p.mu.RLock()
+	defer p.mu.RUnlock()
 	for _, item := range p.items {
 		if item.isBanned() {
 			num++
@@ -192,8 +192,8 @@ func (p *List) NumBanned() (num int) {
 }
 
 func (p *List) Banned(u *url.URL) (ban bool, reason string) {
-	p.RLock()
-	defer p.RUnlock()
+	p.mu.RLock()
+	defer p.mu.RUnlock()
 	if _, exists := p.items[u.String()]; exists {
 		ban = p.items[u.String()].ban
 		reason = p.items[u.String()].reason
@@ -202,8 +202,8 @@ func (p *List) Banned(u *url.URL) (ban bool, reason string) {
 }
 
 func (p *List) Free(u *url.URL) bool {
-	p.Lock()
-	defer p.Unlock()
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	if _, ok := p.items[u.String()]; ok {
 		return !p.items[u.String()].busy
 	}
@@ -211,8 +211,8 @@ func (p *List) Free(u *url.URL) bool {
 }
 
 func (p *List) Busy(u *url.URL) bool {
-	p.Lock()
-	defer p.Unlock()
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	if _, ok := p.items[u.String()]; ok {
 		return p.items[u.String()].busy
 	}
@@ -220,8 +220,8 @@ func (p *List) Busy(u *url.URL) bool {
 }
 
 func (p *List) Ban(u *url.URL, reason string) (ok bool) {
-	p.Lock()
-	defer p.Unlock()
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	if _, ok = p.items[u.String()]; ok {
 		p.items[u.String()].setBan(true, reason)
 	}
@@ -229,8 +229,8 @@ func (p *List) Ban(u *url.URL, reason string) (ok bool) {
 }
 
 func (p *List) Unban(u *url.URL) (ok bool) {
-	p.Lock()
-	defer p.Unlock()
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	if _, ok = p.items[u.String()]; ok {
 		p.items[u.String()].setBan(false, "")
 	}
@@ -238,8 +238,8 @@ func (p *List) Unban(u *url.URL) (ok bool) {
 }
 
 func (p *List) Release(u *url.URL) (ok bool) {
-	p.Lock()
-	defer p.Unlock()
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	if _, ok = p.items[u.String()]; ok {
 		p.items[u.String()].release()
 	}
@@ -259,8 +259,8 @@ func (p *List) Replace(proxies ...*url.URL) {
 		processed[proxy.String()] = proxy
 	}
 
-	p.Lock()
-	defer p.Unlock()
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	for _, proxy := range p.items {
 		if _, ok := processed[proxy.String()]; !ok {
 			delete(p.items, proxy.String())
@@ -269,14 +269,14 @@ func (p *List) Replace(proxies ...*url.URL) {
 }
 
 func (p *List) Clear() {
-	p.Lock()
-	defer p.Unlock()
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	p.items = map[string]*Proxy{}
 }
 
 func (p *List) DeferRelease(u *url.URL, d time.Duration) (ok bool) {
-	p.Lock()
-	defer p.Unlock()
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	if _, ok = p.items[u.String()]; !ok {
 		return
 	}
@@ -285,8 +285,8 @@ func (p *List) DeferRelease(u *url.URL, d time.Duration) (ok bool) {
 }
 
 func (p *List) resetDeferRelease() {
-	p.Lock()
-	defer p.Unlock()
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	for _, proxy := range p.items {
 		if proxy.isDefer() && proxy.deferTime.Before(time.Now()) {
 			proxy.release()
