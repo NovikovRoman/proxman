@@ -90,17 +90,19 @@ func (p *List) Acquire() (u *url.URL) {
 		}
 	}
 
-	if len(shuffleProxy) > 0 {
-		if len(shuffleProxy) > 1 { // random proxy
-			rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
-			rnd.Shuffle(len(shuffleProxy), func(i, j int) {
-				shuffleProxy[i], shuffleProxy[j] = shuffleProxy[j], shuffleProxy[i]
-			})
-		}
-
-		shuffleProxy[0].setBusy(true)
-		u = shuffleProxy[0].url
+	if len(shuffleProxy) == 0 {
+		return
 	}
+
+	if len(shuffleProxy) > 1 { // random proxy
+		rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
+		rnd.Shuffle(len(shuffleProxy), func(i, j int) {
+			shuffleProxy[i], shuffleProxy[j] = shuffleProxy[j], shuffleProxy[i]
+		})
+	}
+
+	shuffleProxy[0].setBusy(true)
+	u = shuffleProxy[0].url
 	return
 }
 
